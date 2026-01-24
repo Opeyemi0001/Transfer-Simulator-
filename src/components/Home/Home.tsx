@@ -48,9 +48,8 @@ const Home = () => {
         dva: false,
       };
 
-      // Use Vite environment variable (VITE_API_BASE) with a sensible fallback for local dev.
-      // Create a .env.development file with VITE_API_BASE=http://localhost:4000 when developing locally.
-  const API_BASE = (import.meta as unknown as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ?? 'http://localhost:4000';
+      
+      const API_BASE = (import.meta as unknown as { env?: { API_BASE_PORT?: string } }).env?.API_BASE_PORT ?? 'http://localhost:4000';
       const url = `${API_BASE.replace(/\/$/, '')}/api/v1/transactions/simulate_payment`;
 
       console.log('Sending request to', url, 'payload=', payload);
@@ -72,7 +71,6 @@ const Home = () => {
 
       const data = await res.json();
       setResponse(data);
-      console.log('API Response:', data);
     } catch (err: unknown) {
       // If server returned an error message, show it to help debugging (e.g. validation errors)
       const message =
@@ -82,7 +80,7 @@ const Home = () => {
           ? (err as { message: string }).message
           : 'Failed to process payment. Please try again.';
       setError(message);
-      console.error('API Error:', err);
+      // Optionally log the error to an external service
     } finally {
       setLoading(false);
     }
@@ -170,7 +168,7 @@ const Home = () => {
                   Status: {response.status || "N/A"}
                 </div>
                 <div className={style.responseDetails}>
-                  {JSON.stringify(response, null, 2)}
+                  Message: {response.message || "N/A"}
                 </div>
                 <button className={style.backBtn} onClick={handleBackClick}>
                   Back
