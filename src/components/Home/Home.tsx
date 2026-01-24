@@ -1,11 +1,17 @@
 import { useState } from "react";
 import style from "./Home.module.scss";
 
+type SimulateResponse = {
+  status?: string;
+  message?: string;
+  [key: string]: unknown;
+};
+
 const Home = () => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [response, setResponse] = useState<any>(null);
+  const [response, setResponse] = useState<SimulateResponse | null>(null);
   const [formData, setFormData] = useState({
     accountNumber: "",
     amount: "",
@@ -69,8 +75,8 @@ const Home = () => {
         throw new Error(message);
       }
 
-      const data = await res.json();
-      setResponse(data);
+  const data = await res.json();
+  setResponse(data as SimulateResponse);
     } catch (err: unknown) {
       // If server returned an error message, show it to help debugging (e.g. validation errors)
       const message =
