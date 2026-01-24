@@ -8,8 +8,6 @@ const Home = () => {
   const [response, setResponse] = useState<any>(null);
   const [formData, setFormData] = useState({
     accountNumber: "",
-    bank: "",
-    accountName: "",
     amount: "",
   });
 
@@ -45,29 +43,46 @@ const Home = () => {
 
     try {
       const payload = {
-        accountNumber: formData.accountNumber,
-        bank: formData.bank,
-        accountName: formData.accountName,
-        amount: parseFloat(formData.amount),
+        virtual_account_number: formData.accountNumber,
+        amount: String(formData.amount),
+        dva: false,
       };
 
-      const res = await fetch(
-        "https://devapi.sloud.app/api/v1/transactions/simulate_payment",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      // Use Vite environment variable (VITE_API_BASE) with a sensible fallback for local dev.
+      // Create a .env.development file with VITE_API_BASE=http://localhost:4000 when developing locally.
+  const API_BASE = (import.meta as unknown as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE ?? 'http://localhost:4000';
+      const url = `${API_BASE.replace(/\/$/, '')}/api/v1/transactions/simulate_payment`;
+
+      console.log('Sending request to', url, 'payload=', payload);
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      // Surface non-2xx responses as errors with body text to help debugging
+      if (!res.ok) {
+        const text = await res.text().catch(() => null);
+        const message = text || res.statusText || `HTTP ${res.status}`;
+        throw new Error(message);
+      }
 
       const data = await res.json();
       setResponse(data);
-      console.log("API Response:", data);
-    } catch (err) {
-      setError("Failed to process payment. Please try again.");
-      console.error("API Error:", err);
+      console.log('API Response:', data);
+    } catch (err: unknown) {
+      // If server returned an error message, show it to help debugging (e.g. validation errors)
+      const message =
+        typeof err === 'string'
+          ? err
+          : err && typeof (err as { message?: unknown }).message === 'string'
+          ? (err as { message: string }).message
+          : 'Failed to process payment. Please try again.';
+      setError(message);
+      console.error('API Error:', err);
     } finally {
       setLoading(false);
     }
@@ -77,8 +92,6 @@ const Home = () => {
     setShowForm(false);
     setFormData({
       accountNumber: "",
-      bank: "",
-      accountName: "",
       amount: "",
     });
     setError("");
@@ -124,27 +137,6 @@ const Home = () => {
                   className={style.formInput}
                 />
 
-                <select
-                  name="bank"
-                  value={formData.bank}
-                  onChange={handleInputChange}
-                  className={style.formInput}
-                >
-                  <option value="">Select Bank</option>
-                  <option value="gtb">Guaranty Trust Bank (GTB)</option>
-                  <option value="zenith">Zenith Bank</option>
-                  <option value="fcmb">FCMB</option>
-                  <option value="access">Access Bank</option>
-                </select>
-
-                <input
-                  type="text"
-                  name="accountName"
-                  placeholder="Account Name"
-                  value={formData.accountName}
-                  onChange={handleInputChange}
-                  className={style.formInput}
-                />
 
                 <input
                   type="number"
